@@ -1,0 +1,13 @@
+
+ ___________  ___   _   _  _____  ___  _____ _____ _____ _____ _   _  _____
+|_   _| ___ \/ _ \ | \ | |/  ___|/ _ \/  __ \_   _|_   _|  _  | \ | |/  ___|
+  | | | |_/ / /_\ \|  \| |\ `--./ /_\ \ /  \/ | |   | | | | | |  \| |\ `--.
+  | | |    /|  _  || . ` | `--. \  _  | |     | |   | | | | | | . ` | `--. \
+  | | | |\ \| | | || |\  |/\__/ / | | | \__/\ | |  _| |_\ \_/ / |\  |/\__/ /
+  \_/ \_| \_\_| |_/\_| \_/\____/\_| |_/\____/ \_/  \___/ \___/\_| \_/\____/
+
+Made with love by Julien Bourdon <julien@jbourdon.org>
+
+${AnsiColor.BRIGHT_BLUE}Thank you JHipster team for teaching me how to write proper Spring code ${AnsiColor.BRIGHT_RED}♥ ${AnsiColor.BRIGHT_BLUE}https://jhipster.github.io/
+${AnsiColor.BRIGHT_BLUE}:: Running Spring Boot ${spring-boot.version} ::
+
