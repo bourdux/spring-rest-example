@@ -2,6 +2,7 @@ package org.jbourdon.springRestExample.service;
 
 import org.jbourdon.springRestExample.domain.Transaction;
 import org.jbourdon.springRestExample.repository.TransactionRepository;
+import org.jbourdon.springRestExample.web.rest.TransactionRestWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,22 @@ public class TransactionService {
     public Transaction save(Transaction transaction) {
         log.debug("Request to save transaction : {}", transaction);
         return transactionRepository.save(transaction);
+    }
+
+    public Transaction save(TransactionRestWrapper transactionRestWrapper) {
+        return this.save(transactionRestWrapper, null);
+    }
+
+    public Transaction save(TransactionRestWrapper transactionRestWrapper, Long transactionId) {
+        log.debug("Request to save transaction with wrapper: {} with id: {}", transactionRestWrapper, transactionId);
+        Transaction transaction = new Transaction();
+        transaction.setId(transactionId);
+        transaction.setAmount(transactionRestWrapper.getAmount());
+        transaction.setType(transactionRestWrapper.getType());
+        if (transactionRestWrapper.getParentId() != null) {
+            transaction.setParent(this.findOne(transactionRestWrapper.getParentId()));
+        }
+        return this.save(transaction);
     }
 
     /**
@@ -77,4 +94,5 @@ public class TransactionService {
         log.debug("Request to delete transaction {}", id);
         transactionRepository.delete(id);
     }
+
 }

@@ -25,9 +25,9 @@ import javax.inject.Inject;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.hasSize;
 
 /**
  * Test class for the TransactionResource REST controller.
@@ -98,8 +98,9 @@ public class TransactionResourceIntTest {
         // Create the Transaction
         restTransactionMockMvc.perform(post("/transactionservice/transaction")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(transaction)))
-                .andExpect(status().isCreated());
+                .content(TestUtil.convertObjectToJsonBytes(TransactionRestWrapper.fromTransaction(transaction))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("ok"));
 
         // Validate the Transaction in the database
         List<Transaction> transactions = transactionRepository.findAll();
@@ -114,14 +115,21 @@ public class TransactionResourceIntTest {
     public void getTransaction() throws Exception {
         // Initialize the database
         transactionService.save(transaction);
-
+        transactionService.save(childTransaction1);
         // Get the transaction
         restTransactionMockMvc.perform(get("/transactionservice/transaction/{id}", transaction.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(transaction.getId().intValue()))
                 .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT))
                 .andExpect(jsonPath("$.type").value(DEFAULT_TYPE));
+
+        restTransactionMockMvc.perform(get("/transactionservice/transaction/{id}", childTransaction1.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT))
+                .andExpect(jsonPath("$.type").value(DEFAULT_TYPE))
+                .andExpect(jsonPath("$.parent_id").value(transaction.getId().intValue()));
+
     }
 
     @Test
@@ -145,10 +153,12 @@ public class TransactionResourceIntTest {
         updatedTransaction.setAmount(UPDATED_AMOUNT);
         updatedTransaction.setType(UPDATED_TYPE);
 
-        restTransactionMockMvc.perform(put("/transactionservice/transaction")
+        restTransactionMockMvc.perform(put("/transactionservice/transaction/" + updatedTransaction.getId())
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(updatedTransaction)))
-                .andExpect(status().isOk());
+                .content(TestUtil.convertObjectToJsonBytes(TransactionRestWrapper.fromTransaction(updatedTransaction)))
+                .accept(TestUtil.APPLICATION_JSON_UTF8))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
 
         // Validate the Transaction in the database
         List<Transaction> transactions = transactionRepository.findAll();
@@ -206,4 +216,5 @@ public class TransactionResourceIntTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(jsonPath("$.sum").value(transaction.getAmount() + childTransaction1.getAmount() + childTransaction2.getAmount()));
     }
+
 }

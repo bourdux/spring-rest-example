@@ -2,12 +2,13 @@ package org.jbourdon.springRestExample.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonView;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -25,13 +26,15 @@ public class Transaction implements Serializable {
     private Long id;
 
     @Column(name = "amount")
+    @JsonView(TransactionView.Minimal.class)
     private Double amount;
 
     @Column(name = "type")
+    @JsonView(TransactionView.Minimal.class)
     private String type;
 
     @ManyToOne
-    @JsonIgnore
+    @JsonView(TransactionView.Full.class)
     private Transaction parent;
 
     @OneToMany(mappedBy = "parent")
@@ -66,15 +69,22 @@ public class Transaction implements Serializable {
         return parent;
     }
 
+    @JsonProperty(value = "parent_id")
+    @JsonView(TransactionView.Rest.class)
+    public Long getParentId() {
+        return Optional.ofNullable(parent).map(Transaction::getId).orElse(null);
+    }
+
     public void setParent(Transaction transaction) {
         this.parent = transaction;
         transaction.addChild(this);
     }
 
+
     public void addChild(Transaction child) {
         this.children.add(child);
         if (child.getParent() == null) {
-           child.setParent(this);
+            child.setParent(this);
         }
     }
 
@@ -99,7 +109,7 @@ public class Transaction implements Serializable {
             return false;
         }
         Transaction transaction = (Transaction) o;
-        if(transaction.id == null || id == null) {
+        if (transaction.id == null || id == null) {
             return false;
         }
         return Objects.equals(id, transaction.id);
@@ -113,9 +123,10 @@ public class Transaction implements Serializable {
     @Override
     public String toString() {
         return "Transaction{" +
-            "id=" + id +
-            ", amount='" + amount + "'" +
-            ", type='" + type + "'" +
-            '}';
+                "id=" + id +
+                ", amount='" + amount + "'" +
+                ", type='" + type + "'" +
+                ", parent='" + parent + "'" +
+                '}';
     }
 }

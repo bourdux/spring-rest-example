@@ -1,7 +1,8 @@
 package org.jbourdon.springRestExample.web.rest;
 
-import org.jbourdon.springRestExample.domain.SumResult;
+import com.fasterxml.jackson.annotation.JsonView;
 import org.jbourdon.springRestExample.domain.Transaction;
+import org.jbourdon.springRestExample.domain.TransactionView;
 import org.jbourdon.springRestExample.service.TransactionService;
 import org.jbourdon.springRestExample.web.util.HeaderUtil;
 import org.slf4j.Logger;
@@ -33,45 +34,44 @@ public class TransactionResource {
     /**
      * POST  /transactions : Create a new transaction.
      *
-     * @param transaction the transaction to create
+     * @param transactionRestWrapper the wrapper representing the transaction to create
      * @return the ResponseEntity with status 201 (Created) and with body the new transaction, or with status 400 (Bad Request) if the transaction has already an ID
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
     @RequestMapping(value = "/transaction",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) throws URISyntaxException {
-        log.debug("REST request to save Transaction : {}", transaction);
-        if (transaction.getId() != null) {
-            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert("transaction", "idexists", "A new transaction cannot already have an ID")).body(null);
-        }
-        Transaction result = transactionService.save(transaction);
+    public ResponseEntity<UpdateStatus> createTransaction(@RequestBody TransactionRestWrapper transactionRestWrapper) throws URISyntaxException {
+        log.debug("REST request to save Transaction : {}", transactionRestWrapper);
+        Transaction result = transactionService.save(transactionRestWrapper);
+        UpdateStatus updateStatus = new UpdateStatus("ok");
         return ResponseEntity.created(new URI("//transactionservice/transaction/" + result.getId()))
                 .headers(HeaderUtil.createEntityCreationAlert("transaction", result.getId().toString()))
-                .body(result);
+                .body(updateStatus);
     }
 
     /**
      * PUT  /transactions : Updates an existing transaction.
      *
-     * @param transaction the transaction to update
+     * @param transactionRestWrapper the wrapper representing the transaction to update
      * @return the ResponseEntity with status 200 (OK) and with body the updated transaction,
      * or with status 400 (Bad Request) if the transaction is not valid,
      * or with status 500 (Internal Server Error) if the transaction couldnt be updated
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
-    @RequestMapping(value = "/transaction",
+    @RequestMapping(value = "/transaction/{id}",
             method = RequestMethod.PUT,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Transaction> updateTransaction(@RequestBody Transaction transaction) throws URISyntaxException {
-        log.debug("REST request to update Transaction : {}", transaction);
-        if (transaction.getId() == null) {
-            return createTransaction(transaction);
+    public ResponseEntity<UpdateStatus> updateTransaction(@PathVariable Long id, @RequestBody TransactionRestWrapper transactionRestWrapper) throws URISyntaxException {
+        log.debug("REST request to update Transaction : {}, id: {}", transactionRestWrapper, id);
+        if (id == null) {
+            return createTransaction(transactionRestWrapper);
         }
-        Transaction result = transactionService.save(transaction);
+        Transaction result = transactionService.save(transactionRestWrapper, id);
+        UpdateStatus updateStatus = new UpdateStatus("ok");
         return ResponseEntity.ok()
-                .headers(HeaderUtil.createEntityUpdateAlert("transaction", transaction.getId().toString()))
-                .body(result);
+                .headers(HeaderUtil.createEntityUpdateAlert("transaction", result.getId().toString()))
+                .body(updateStatus);
     }
 
     /**
@@ -80,6 +80,7 @@ public class TransactionResource {
      * @param id the id of the transaction to retrieve
      * @return the ResponseEntity with status 200 (OK) and with body the transaction, or with status 404 (Not Found)
      */
+    @JsonView(TransactionView.Rest.class)
     @RequestMapping(value = "/transaction/{id}",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)

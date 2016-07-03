@@ -1,4 +1,4 @@
-package org.jbourdon.springRestExample.domain;
+package org.jbourdon.springRestExample.web.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
