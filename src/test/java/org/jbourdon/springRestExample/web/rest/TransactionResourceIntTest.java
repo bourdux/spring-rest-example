@@ -71,7 +71,6 @@ public class TransactionResourceIntTest {
         TransactionResource transactionResource = new TransactionResource();
         ReflectionTestUtils.setField(transactionResource, "transactionService", transactionService);
         this.restTransactionMockMvc = MockMvcBuilders.standaloneSetup(transactionResource)
-                .setCustomArgumentResolvers(pageableArgumentResolver)
                 .setMessageConverters(jacksonMessageConverter).build();
     }
 
@@ -112,7 +111,7 @@ public class TransactionResourceIntTest {
 
     @Test
     @Transactional
-    public void getTransaction() throws Exception {
+    public void should_be_ableto_get_transaction_from_database() throws Exception {
         // Initialize the database
         transactionService.save(transaction);
         transactionService.save(childTransaction1);
@@ -134,7 +133,7 @@ public class TransactionResourceIntTest {
 
     @Test
     @Transactional
-    public void getNonExistingTransaction() throws Exception {
+    public void non_existing_transaction_should_yield_notfound() throws Exception {
         // Get the transaction
         restTransactionMockMvc.perform(get("/transactionservice/transaction/{id}", Long.MAX_VALUE))
                 .andExpect(status().isNotFound());
@@ -142,7 +141,7 @@ public class TransactionResourceIntTest {
 
     @Test
     @Transactional
-    public void updateTransaction() throws Exception {
+    public void should_be_able_to_update_transaction() throws Exception {
         // Initialize the database
         transactionService.save(transaction);
         int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
@@ -170,7 +169,24 @@ public class TransactionResourceIntTest {
 
     @Test
     @Transactional
-    public void deleteTransaction() throws Exception {
+    public void update_causing_cycle_should_return_an_error() throws Exception{
+        transactionService.save(transaction);
+        transactionService.save(childTransaction1);
+
+        //Update transaction to cause cycle
+        transaction.setParent(childTransaction1);
+
+        restTransactionMockMvc.perform(put("/transactionservice/transaction/" + transaction.getId())
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(TransactionRestWrapper.fromTransaction(transaction)))
+                .accept(TestUtil.APPLICATION_JSON_UTF8))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("error"));
+    }
+
+    @Test
+    @Transactional
+    public void should_be_able_to_delete_transaction() throws Exception {
         // Initialize the database
         transactionService.save(transaction);
         int databaseSizeBeforeDelete = transactionRepository.findAll().size();
@@ -187,7 +203,7 @@ public class TransactionResourceIntTest {
 
     @Test
     @Transactional
-    public void transactionType() throws Exception {
+    public void should_be_able_to_get_list_of_transactions_of_a_type() throws Exception {
         // Initialize the database
         transactionService.save(transaction);
         transactionService.save(childTransaction1);
@@ -204,7 +220,7 @@ public class TransactionResourceIntTest {
 
     @Test
     @Transactional
-    public void sumChildrenTransaction() throws Exception {
+    public void should_be_able_to_sum_transaction_children() throws Exception {
         // Initialize the database
         transactionService.save(transaction);
         transactionService.save(childTransaction1);

@@ -22,7 +22,6 @@ public class Transaction implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(name = "amount")
@@ -77,11 +76,12 @@ public class Transaction implements Serializable {
 
     public void setParent(Transaction transaction) {
         this.parent = transaction;
-        transaction.addChild(this);
+        if (transaction != null) {
+            transaction.addChild(this);
+        }
     }
 
-
-    public void addChild(Transaction child) {
+    void addChild(Transaction child) {
         this.children.add(child);
         if (child.getParent() == null) {
             child.setParent(this);
@@ -96,8 +96,29 @@ public class Transaction implements Serializable {
         this.children = transactions;
     }
 
+    /**
+     * Get a flattened stream
+     * @return
+     */
     public Stream<Transaction> flattened() {
         return Stream.concat(Stream.of(this), children.stream().flatMap(Transaction::flattened));
+    }
+
+    /**
+     * Detect if a transaction creates a cycle in the parent-child transaction tree structure
+     * @return true if we detect a cycle
+     */
+    public boolean hasCycle() {
+        /* Detect if transaction is transitively its own parent */
+        Transaction parent = this.getParent();
+        while (parent != null) {
+            if (this.equals(parent)) {
+                return true;
+            }
+            parent = parent.getParent();
+        }
+        /* Detect if transaction is transitively its own child */
+        return this.flattened().filter(this::equals).count() > 1;
     }
 
     @Override
@@ -128,25 +149,5 @@ public class Transaction implements Serializable {
                 ", type='" + type + "'" +
                 ", parent='" + parent + "'" +
                 '}';
-    }
-
-    /**
-     * Detect if a transaction creates a cycle in the parent-child transaction tree structure
-     * @return true if we detect a cycle
-     */
-    public boolean hasCycle() {
-        /* Detect if transaction is transitively its own parent */
-        Transaction parent = this.getParent();
-        while (parent != null) {
-            if (this.equals(parent)) {
-                return true;
-            }
-            parent = parent.getParent();
-        }
-        /* Detect if transaction is transitively its own child */
-        if (this.flattened().filter(child -> this.equals(child)).count() > 1) {
-            return true;
-        }
-        return false;
     }
 }

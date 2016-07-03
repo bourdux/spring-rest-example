@@ -32,7 +32,7 @@ public class TransactionResource {
     private TransactionService transactionService;
 
     /**
-     * POST  /transactions : Create a new transaction.
+     * POST  /transaction : Create a new transaction.
      *
      * @param transactionRestWrapper the wrapper representing the transaction to create
      * @return the ResponseEntity with status 201 (Created) and with body the new transaction, or with status 400 (Bad Request) if the transaction has already an ID
@@ -43,19 +43,25 @@ public class TransactionResource {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdateStatus> createTransaction(@RequestBody TransactionRestWrapper transactionRestWrapper) throws URISyntaxException {
         log.debug("REST request to save Transaction : {}", transactionRestWrapper);
-        Transaction result = transactionService.save(transactionRestWrapper);
         UpdateStatus updateStatus = new UpdateStatus("ok");
-        return ResponseEntity.created(new URI("//transactionservice/transaction/" + result.getId()))
-                .headers(HeaderUtil.createEntityCreationAlert("transaction", result.getId().toString()))
-                .body(updateStatus);
+        try {
+            Transaction result = transactionService.save(transactionRestWrapper);
+            return ResponseEntity.created(new URI("//transactionservice/transaction/" + result.getId()))
+                    .headers(HeaderUtil.createEntityCreationAlert("transaction", result.getId().toString()))
+                    .body(updateStatus);
+        } catch (IllegalStateException e) {
+            updateStatus = new UpdateStatus("error");
+            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert("transaction", "illegalstate", e.getMessage())).body(updateStatus);
+        }
+
     }
 
     /**
-     * PUT  /transactions : Updates an existing transaction.
+     * PUT  /transaction/:id : Updates the "id" transaction
      *
      * @param transactionRestWrapper the wrapper representing the transaction to update
-     * @return the ResponseEntity with status 200 (OK) and with body the updated transaction,
-     * or with status 400 (Bad Request) if the transaction is not valid,
+     * @return the ResponseEntity with status 200 (OK) and with body the ok status,
+     * or with status 400 (Bad Request) if the transaction is not valid (e.g. cause a cycle in the tree)
      * or with status 500 (Internal Server Error) if the transaction couldnt be updated
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
@@ -81,7 +87,7 @@ public class TransactionResource {
     }
 
     /**
-     * GET  /transactions/:id : get the "id" transaction.
+     * GET  /transaction/:id : get the "id" transaction.
      *
      * @param id the id of the transaction to retrieve
      * @return the ResponseEntity with status 200 (OK) and with body the transaction, or with status 404 (Not Found)
@@ -101,7 +107,7 @@ public class TransactionResource {
     }
 
     /**
-     * DELETE  /transactions/:id : delete the "id" transaction.
+     * DELETE  /transaction/:id : delete the "id" transaction.
      *
      * @param id the id of the transaction to delete
      * @return the ResponseEntity with status 200 (OK)
