@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * A Transaction.
+ * A Transaction entity.
  */
 @Entity
 @Table(name = "transaction")
@@ -97,8 +97,9 @@ public class Transaction implements Serializable {
     }
 
     /**
-     * Get a flattened stream
-     * @return
+     * Get a flattened stream of this transaction and its children.
+     * This method can be used to do further operations such as sum or filtering
+     * @return the stream of this transaction and its children
      */
     public Stream<Transaction> flattened() {
         return Stream.concat(Stream.of(this), children.stream().flatMap(Transaction::flattened));
@@ -130,10 +131,7 @@ public class Transaction implements Serializable {
             return false;
         }
         Transaction transaction = (Transaction) o;
-        if (transaction.id == null || id == null) {
-            return false;
-        }
-        return Objects.equals(id, transaction.id);
+        return !(transaction.id == null || id == null) && Objects.equals(id, transaction.id);
     }
 
     @Override

@@ -121,6 +121,12 @@ public class TransactionResource {
         return ResponseEntity.ok().headers(HeaderUtil.createEntityDeletionAlert("transaction", id.toString())).build();
     }
 
+    /**
+     * GET /types/:type : get the array of transaction ids of type "type"
+     *
+     * @param type the transaction type to get
+     * @return the array of transaction ids of this type
+     */
     @RequestMapping(value = "/types/{type}",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -129,6 +135,12 @@ public class TransactionResource {
         return transactionService.findTransactionIdsOfType(type);
     }
 
+    /**
+     * GET /sum/:id : get the sum of the transaction with id "id" and its descendants
+     *
+     * @param id the id of the root transaction
+     * @return the sum the transaction amount and its descendants
+     */
     @RequestMapping(value = "/sum/{id}",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
