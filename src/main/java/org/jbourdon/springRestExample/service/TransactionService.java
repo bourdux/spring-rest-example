@@ -36,6 +36,14 @@ public class TransactionService {
         return this.save(transactionRestWrapper, null);
     }
 
+    /**
+     *
+     * @param transactionRestWrapper the wrapper representing the transaction we are trying to save
+     * @param transactionId the tentative id for the transaction
+     * @return the saved transaction
+     *
+     * @throws IllegalStateException if a cycle is detected for the transaction we are attempting to save
+     */
     public Transaction save(TransactionRestWrapper transactionRestWrapper, Long transactionId) {
         log.debug("Request to save transaction with wrapper: {} with id: {}", transactionRestWrapper, transactionId);
         Transaction transaction = new Transaction();
@@ -44,6 +52,9 @@ public class TransactionService {
         transaction.setType(transactionRestWrapper.getType());
         if (transactionRestWrapper.getParentId() != null) {
             transaction.setParent(this.findOne(transactionRestWrapper.getParentId()));
+        }
+        if (transaction.hasCycle()) {
+            throw new IllegalStateException("Cycle detected in the transaction tree");
         }
         return this.save(transaction);
     }

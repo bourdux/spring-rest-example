@@ -129,4 +129,24 @@ public class Transaction implements Serializable {
                 ", parent='" + parent + "'" +
                 '}';
     }
+
+    /**
+     * Detect if a transaction creates a cycle in the parent-child transaction tree structure
+     * @return true if we detect a cycle
+     */
+    public boolean hasCycle() {
+        /* Detect if transaction is transitively its own parent */
+        Transaction parent = this.getParent();
+        while (parent != null) {
+            if (this.equals(parent)) {
+                return true;
+            }
+            parent = parent.getParent();
+        }
+        /* Detect if transaction is transitively its own child */
+        if (this.flattened().filter(child -> this.equals(child)).count() > 1) {
+            return true;
+        }
+        return false;
+    }
 }

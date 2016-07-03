@@ -67,11 +67,17 @@ public class TransactionResource {
         if (id == null) {
             return createTransaction(transactionRestWrapper);
         }
-        Transaction result = transactionService.save(transactionRestWrapper, id);
         UpdateStatus updateStatus = new UpdateStatus("ok");
-        return ResponseEntity.ok()
-                .headers(HeaderUtil.createEntityUpdateAlert("transaction", result.getId().toString()))
-                .body(updateStatus);
+        try {
+            Transaction result = transactionService.save(transactionRestWrapper, id);
+            return ResponseEntity.ok()
+                    .headers(HeaderUtil.createEntityUpdateAlert("transaction", result.getId().toString()))
+                    .body(updateStatus);
+        } catch (IllegalStateException e) {
+            updateStatus = new UpdateStatus("error");
+            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert("transaction", "illegalstate", e.getMessage())).body(updateStatus);
+        }
+
     }
 
     /**
